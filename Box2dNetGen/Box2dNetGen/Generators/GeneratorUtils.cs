@@ -5,9 +5,10 @@
         /// <summary>
         /// Generates a list of parameters for a function.
         /// </summary>
-        public string GenerateParameterList(List<ApiParameter> parameters, bool includeMarshalAttributes, bool delegateAsIntPtr, out bool containsDelegateParameters)
+        public string GenerateParameterList(List<ApiParameter> parameters, bool includeMarshalAttributes, bool delegateAsIntPtr, out bool containsDelegateParameters, out bool containsArrayParameters)
         {
             containsDelegateParameters = false;
+            containsArrayParameters = false;
             var csParameters = new List<string>();
             for (var i = 0; i < parameters.Count; i++)
             {
@@ -15,6 +16,8 @@
                 var nextParameterIdentifier = i < parameters.Count - 1 ? parameters[i + 1].Identifier : "";
                 var isArray = p.Type.EndsWith("*") &&
                               (p.Identifier.ToLower().EndsWith("array") || nextParameterIdentifier.ToLower().Contains("count") || nextParameterIdentifier.ToLower().Contains("capacity")); // naive but seems to work for box2d: when a pointer parameter is followed by a 'count' parameter, it's an array, else it's a ptr to a single item.
+                if (isArray)
+                    containsArrayParameters =  true;
                 var attribute = "";
                 if (includeMarshalAttributes)
                     attribute = (p.Type == "bool") ? "[MarshalAs(UnmanagedType.U1)] " : "";

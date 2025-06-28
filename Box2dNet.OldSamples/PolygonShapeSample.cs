@@ -38,12 +38,13 @@ namespace Box2dNet.OldSamples
                 B2Api.b2DestroyWorld(b2WorldId);
             }
         }
-
-        private static b2Polygon CreatePolygon(Vector2[] corners)
+        private static unsafe b2Polygon CreatePolygon(ReadOnlySpan<Vector2> corners)
         {
             if (corners.Length is < 3 or > 8) throw new Exception($"Corner count ({corners.Length}) must be within [3,8].");
-            
-            return B2Api.b2MakePolygon(B2Api.b2ComputeHull(corners, corners.Length), 0);
+            fixed (Vector2* arrayPtr = &corners[0])
+            {
+                return B2Api.b2MakePolygon(B2Api.b2ComputeHull(arrayPtr, corners.Length), 0);
+            }
         }
     }
 }

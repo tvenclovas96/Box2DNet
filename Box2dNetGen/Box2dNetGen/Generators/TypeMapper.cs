@@ -95,7 +95,7 @@
                     if (codeDirection == CodeDirection.NativeToClr)
                         return "IntPtr"; // 'returning' arrays won't allocate .NET arrays. We have to accept the array as an IntPtr and loop over it. See helper method NativeArrayAsSpan in Box2dNet.
 
-                    return $"{type}[]";
+                    return $"{type}*"; 
                 }
 
                 return type;

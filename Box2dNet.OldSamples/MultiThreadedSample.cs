@@ -93,15 +93,18 @@ namespace Box2dNet.OldSamples
             var b2BodyId = B2Api.b2CreateBody(b2WorldId, bodyDef);
 
             var shapeDef = B2Api.b2DefaultShapeDef();
-            var polygon = CreatePolygon(new Vector2[] { new(-100, 0), new(-100, 1), new(200, 1), new(200, 0) });
+            ReadOnlySpan<Vector2> points = [new(-100, 0), new(-100, 1), new(200, 1), new(200, 0)];
+            var polygon = CreatePolygon(points);
             B2Api.b2CreatePolygonShape(b2BodyId, in shapeDef, in polygon);
         }
 
-        private static b2Polygon CreatePolygon(Vector2[] corners)
+        private static unsafe b2Polygon CreatePolygon(ReadOnlySpan<Vector2> corners)
         {
             if (corners.Length is < 3 or > 8) throw new Exception($"Corner count ({corners.Length}) must be within [3,8].");
-
-            return B2Api.b2MakePolygon(B2Api.b2ComputeHull(corners, corners.Length), 0);
+            fixed (Vector2* arrayPtr = &corners[0])
+            {
+                return B2Api.b2MakePolygon(B2Api.b2ComputeHull(arrayPtr, corners.Length), 0);
+            }
         }
     }
 }

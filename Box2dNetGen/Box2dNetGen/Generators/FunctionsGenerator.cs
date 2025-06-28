@@ -14,22 +14,22 @@ namespace Box2dNetGen.Generators
                 try
                 {
                     var sbI = new StringBuilder();
-                    var parameters = utils.GenerateParameterList(apiFunction.Parameters, true, true, out var containsDelegateParameters);
+                    var parameters = utils.GenerateParameterList(apiFunction.Parameters, true, true, out var containsDelegateParameters, out var containsArrayParameters);
                     sbI.AppendLine();
                     CommentGenerator.AppendComment(sbI, apiFunction.Comment, apiFunction.ReturnType, apiFunction.Parameters.ToDictionary(p => p.Identifier, p => $"(Original C type: {p.Type})"));
                     sbI.AppendLine($"[DllImport(Box2DLibrary, CallingConvention = CallingConvention.Cdecl)]");
                     sbI.AppendLine(
-                        $"public static extern {typeMapper.MapType(apiFunction.ReturnType, false, CodeDirection.ClrToNative, true, out _)} {apiFunction.Identifier}({parameters});");
+                        $"public static extern {(containsArrayParameters ? "unsafe " : string.Empty)}{typeMapper.MapType(apiFunction.ReturnType, false, CodeDirection.ClrToNative, true, out _)} {apiFunction.Identifier}({parameters});");
 
                     if (containsDelegateParameters)
                     {
                         // also generate C# overload that accepts the strongly typed delegate instead of IntPtr.
                         sbI.AppendLine();
-                        parameters = utils.GenerateParameterList(apiFunction.Parameters, false, false, out _);
+                        parameters = utils.GenerateParameterList(apiFunction.Parameters, false, false, out _, out _);
                         var arguments = utils.GenerateArgumentList(apiFunction.Parameters);
                         CommentGenerator.AppendComment(sbI, apiFunction.Comment, apiFunction.ReturnType, apiFunction.Parameters.ToDictionary(p => p.Identifier, p => $"(Original C type: {p.Type})"));
                         sbI.AppendLine(
-                            $"public static {typeMapper.MapType(apiFunction.ReturnType, false, CodeDirection.ClrToNative, true, out _)} {apiFunction.Identifier}({parameters})");
+                            $"public static {(containsArrayParameters ? "unsafe " : string.Empty)}{typeMapper.MapType(apiFunction.ReturnType, false, CodeDirection.ClrToNative, true, out _)} {apiFunction.Identifier}({parameters})");
                         var @return = apiFunction.ReturnType != "void" ? "return " : "";
                         sbI.AppendLine(
                             $"{{\r\n    {@return}{apiFunction.Identifier}({arguments});\r\n}}");
