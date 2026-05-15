@@ -12,7 +12,7 @@ namespace Box2dNetGen
         {
             "b2Vec2", // replaced by System.Numerics.Vector2 using _structTypeReplacer
             "b2Timer", // needs work to translate correctly and .NET has timers of its own
-            
+
             "b2DynamicTree", // needs work to translate because of unions and next-pointers
             "b2TreeNode",
             "b2DistanceCache",
@@ -55,17 +55,21 @@ namespace Box2dNetGen
 
         static async Task Main(string[] args)
         {
-            if (args.Length != 2)
+            if (args.Length != 3)
             {
-                Console.WriteLine("BOX2DNETGEN <box2d repo path> <C# output file path>");
+                Console.WriteLine(
+                    "BOX2DNETGEN <box2d repo path> <C# output file path> <box2d version identifier (commit SHA)>");
                 return;
             }
 
             var box2dFolder = args[0];
             var outputFile = args[1];
-            if (Directory.Exists(Path.Combine(box2dFolder, "include", "box2d")) && File.Exists(Path.Combine(box2dFolder, "README.md")))
+            var box2dFingerprint = args[2];
+
+            if (Directory.Exists(Path.Combine(box2dFolder, "include", "box2d"))
+                && File.Exists(Path.Combine(box2dFolder, "README.md")))
             {
-                await BuildCsWrapperAsync(box2dFolder, outputFile);
+                await BuildCsWrapperAsync(box2dFolder, outputFile, box2dFingerprint);
                 Console.WriteLine();
                 Console.WriteLine($"C# Generated: \"{outputFile}\"");
             }
@@ -75,12 +79,13 @@ namespace Box2dNetGen
             }
         }
 
-        private static async Task BuildCsWrapperAsync(string box2dFolder, string csFilename)
+        private static async Task BuildCsWrapperAsync(string box2dFolder, string csFilename, string fingerprint)
         {
             var src = await ReadSourceFiles(Path.Combine(box2dFolder, "include", "box2d"));
 
             Console.WriteLine("\n\nParsing C ...");
-            var constants = ConstantsExtractor.ExtractAllPrecompilerDefines(_precompilerConstantsIgnoreList, src).ToList();
+            var constants = ConstantsExtractor.ExtractAllPrecompilerDefines(_precompilerConstantsIgnoreList, src)
+                .ToList();
             var structs = new StructsExtractor(_excludedTypes, _structFieldModifiers).ExtractAllStructs(src).ToList();
             var delegates = DelegatesExtractor.ExtractAllDelegates(src).ToList();
             var functions = ApiFunctionsExtractor.ExtractAllApiFunctions(src).ToList();
@@ -89,7 +94,8 @@ namespace Box2dNetGen
             Console.WriteLine("\n\nGenerating C# ...");
             var generator = new CsGenerator(_extraUsings, _structTypeReplacer, ShouldGenerateInitCtor);
 
-            var code = generator.GenerateCsCode(constants, structs, delegates, functions, enums, _excludedTypes);
+            var code = generator.GenerateCsCode(constants, structs, delegates, functions, enums, _excludedTypes,
+                fingerprint);
 
             await File.WriteAllTextAsync(csFilename, code);
         }
@@ -102,6 +108,7 @@ namespace Box2dNetGen
                 Console.WriteLine($"Reading '{Path.GetFileName(file)}'...");
                 sb.AppendLine(await File.ReadAllTextAsync(file));
             }
+
             return sb.ToString();
         }
     }
