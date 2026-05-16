@@ -121,7 +121,7 @@ namespace Box2dNet.Interop
         /// Global scaling for joint drawing
         public float jointScale;
 
-        public b2ContactDrawType contactDrawType;
+        // public b2ContactDrawType contactDrawType;
 
         /// Option to draw shapes
         [MarshalAs(UnmanagedType.U1)] public bool drawShapes;
